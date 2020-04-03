@@ -1,0 +1,14 @@
+version: '3'
+services:
+    web:
+        build: .
+        ports:
+            - "5000:5000"
+        # mounts the current directory into the code folder so we can change code without rebuilding the image
+        volumes:
+            - .:/code
+        # this env variable tells flask to rerun when code is changed
+        environment:
+            FLASK_ENV: development
+    redis:
+        image: "redis:alpine"

@@ -1,0 +1,5 @@
+# prevent docker from copying over these files
+## so we don't overwrite our dependencies
+node_modules
+## so we don't overwrite our logs
+npm-debug.log
