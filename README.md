@@ -12,13 +12,13 @@ Microservices are an architecture style to build a larger application from a set
 - Organized around business capabilities
 - Owned by a small team
 
-Microservices are usually characterized by their decomposition of traditionally monolithic applications across business subdomains or shared capabilities (i.e. services based on how the organization is structured vs what problems the organizations solves). However, really any aspect of an application architecture can be pulled out into it's own service.
+Microservices are usually characterized by their decomposition of traditionally monolithic applications across business subdomains or shared capabilities (i.e. services based on how the organization is structured vs what problems the organizations solves). However, really any aspect of an application architecture can be pulled out into its own service.
 
 ### Making the decision to use them
 
 It all comes down to the balance between benefits and overhead for managing an increased number of services. Microservices take more effort to manage/automate and the increased moving parts introduces new concerns with networking, availability, and security. However, that extra cost can increase development speed, reduce application complexity, increase scalability for individual components, and increase the correlation between organization purpose and technology structures.
 
-### Resources
+### Good Resources
 
 - <https://microservices.io/index.html>
 
@@ -40,9 +40,9 @@ This portability has also led to the ability to build images on top of existing 
 
 The most common container is Docker. It is supported across all major platforms: Unix and Windows systems, and used prolifically across AWS, Google Cloud Platform, and Microsoft Azure.
 
-All these fact help show that containerizing our microservices has a lot of benefits for deployment and development.
+All these facts help show that containerizing our microservices has a lot of benefits for deployment and development.
 
-### Resources
+### Good Resources
 
 - <https://docker-curriculum.com/#dockerfile>
 
@@ -69,7 +69,7 @@ Here are a few useful terms (as used with Docker Swarm) for understanding orches
   - a node running services or tasks in the swarm
 - Service
   - the definition of tasks to execute on the manager or worker nodes
-  - it includes the images and commmands to be execute inside running containers.
+  - it includes the images and commands to be execute inside running containers.
   - services can be replicated across multiple containers to meet redundancy, reliability, and availability needs
   - for global services, the swarm runs one task for the service on every available node in the cluster
 - Tasks
@@ -81,7 +81,7 @@ Here are a few useful terms (as used with Docker Swarm) for understanding orches
   - request to public ports are routed to the proper services by the swarm manager
   - the manager uses internal load balancing to distribute requests among configured workers
 
-### Resources
+### Good Resources
 
 - <https://docs.docker.com/get-started/>
 - <https://docs.docker.com/engine/swarm/key-concepts/>
@@ -117,7 +117,7 @@ An API gateway helps solve this problem by creating a single point of contact fo
 
 In short, an API Gateway is a great asset for microservice environments because of the single point of entry to access services, the customization it can abstract away from clients and services, and protecting service health through handling failures and caching data.
 
-### Resources
+### Good Resources
 
 - <https://www.nginx.com/blog/building-microservices-using-an-api-gateway/>
 
@@ -143,19 +143,106 @@ The Service Discovery lifecycle is broken down into two main components: Service
 
 Well everything I've summarized so far involves clients accessing services through an external mechanism, there are add-ons to this methodology to make clients directly aware of the registry. This enables them to do their own load-balancing without routing the request through a middle-man. Really, this option just boils down to your situations balance between network or application complexity.
 
-### Resources
+### Good Resources
 
 - <https://www.datawire.io/guide/traffic/service-discovery-microservices/>
 - <https://microservices.io/patterns/client-side-discovery.html>
 
-## Load Balancing and Shedding
+## Load Balancing
 
-### Resources
+In a simple definition, load balancing is the practice of distributing incoming network traffic/requests to a pool of compute resources based on a certain strategy. Normally, load balancing is found between clients and web servers to help manage the supply and demand of handling requests. In a microservice architecture, every service also becomes a consumer and producer of network traffic and load balancing is implemented between services to solve similar issues.
 
-## Circuit Breaking
+Taking a look at everything we've talked about already, we have an issue with networking ambiguity, because every service can either be a single resource or a collection of resources! We could implement logic on every single service to handle looking up all the target services/resources we need at the time of a request and then deciding which specific instance to use. But what happens if the chosen resource goes down during that processing time? Now we need to handle that in all of our requests. Or what if we go down before they can respond?? There's so much state we are bundling into the logic of every single application we write that we've created this epidemic bloat that will infect all of our services. Following the (pirate) code of microservice architecture where every service should only do one thing, which should abstract load handling out into a load handler.
 
-### Resources
+### Algorithms
 
-## Event Messaging
+- Round Robin: Requests are sent to servers in a sequential order
+  - Pros: Simple and concise
+  - Cons: Requests varying in size can lead to servers being bogged down as they get more work than others
+- Least Connections: Requests are sent to the server currently with the least number of connections in comparison to it compute power
+  - Pros: Still simple, but a smarter spread to prevent naive queue build-up
+  - Cons: Takes time to query and calculate this equation for each request
+- Least Time: Choose the server based on recent response times and fewest active connections
+  - Pros and cons are similar (but less severe) than Least Connections because it's using internal data instead of querying the server for every new request
+- Hash: Map a hash algorithm to the available servers and send the request based on hashing some of the request data
+  - Pros: Fast, balance of consistency and randomness in the chosen hash algorithm and mapping evenly distribute the requests while avoiding build up in the request queues
+  - Cons: not addressing the current load of servers
+- IP Hash: specifically using the client's IP address for the hash
+- Random with N Choices: Pick N servers at random and send the request based on a Least Connections or Least Time algorithm
+  - Pros: Combine randomness benefits on top of another algorithm's strengths, good for large pools of servers, gives configurable balance between random selection and applied algorithm
+  - Cons: Weaknesses of the applied algorithm, improperly balanced random selection can reduce algorithm efficiency
 
-### Resources
+### Popular technologies
+
+- F5
+- Citrix
+- NGINX Plus (Web server with balancing built in)
+- Amazon Elastic Load Balancing (ELB)
+- Zevenet
+- LoadMaster
+
+### Good Resources
+
+- <https://www.nginx.com/resources/glossary/load-balancing/>
+
+## Circuit Breaking and Load Shedding
+
+So far we've looked at what happens when everything goes according to plan with microservices. But I've heard enough quotes of Murphy's law to know that's not going to always be the case. We need to have measures to handle when our load is too much for our own or dependent services.
+
+### Circuit Breaking
+
+The more popular of these issues to address is when the services we rely on are less responsive than we need them. Piggybacking off of electrical systems (which is literally how software runs) and their concept of circuit breakers we can write our service code to handle this issue by watching the connection health and deciding to open the breaker and short-circuit every request to that service since we believe it's going to fail anyways. The following image shows the essence of what we just described.
+
+!["Circuit Breakers and Timeouts"](images/timeout.png "Circuit Breakers and Timeouts")
+
+So how will we know when we can close the circuit (loop) back up and get back to business as usual? Or what if it's just a slower response than normal and not totally unresponsive? This is where we can give some state to the circuit breaker to control the right level of flow and monitoring.
+
+The states of a circuit-breaker are 1) closed, 2) open, and 3) half-open.
+
+Closed means our connections are completely healthy and we can push every request through the full loop/circuit. Closed is really like a good left green arrow.
+
+Open means the connection is so unhealthy that we are assuming things will fail and want to handle the failure without sending requests along. (We'll also secretly let a few requests through every so often to check the connection status so we can close back up). Open is our red arrow telling us to back off.
+
+This makes half-open our flashing yellow. Being half-open means that our connection isn't fully healthy/clear, but that we can still sneak some requests through. So we'll send requests when we think we can, but will fail them prematurely if we think they can't make it.
+
+!["Circuit Breaker States"](images/circuit_breaker_state_diagram.gif "Circuit Breaker States")
+
+### Load Shedding
+
+Less talked about is handling when we have too much load for our own service(s). We've created an infrastructure up to this point that can scale horizontally at a factor of N computing nodes and have a mechanism (Load Balancing) to share work across our nodes. But due to the shortcomings of our balancing algorithms we build up a queue of requests at nodes that receive a disproportionate of the load. One option to work with this imbalance is by dropping excess requests in the queue in a way that let's our client know to try again to get a less busy node. This is Load Shedding.
+
+Now, let's start off by saying it's a bad thing to return failure responses, but we're in between a rock and a hard place with n-factorial potential failure points and our physical compute limits at any given time. SOOO we have to make a choice that will potentially lengthen the response time of some requests, but hopefully also keep our average response times low and manageable during those hard times.
+
+Let me share a story from a brilliant article about Scaling React Server Side Rendering by [@arkwright](http://arkwright.github.io/scaling-react-server-side-rendering.html>). His company had "a freak operations accident" where a misconfiguration restarted every instance of a service all at once. They all started to come back on, and, as soon as the first node came back online, all the traffic was routed to it causing complete failure and cascading down across each node starting up since they would each get 100% of the load traffic right after taking their first breath. Situations like this are what nightmares are made out of.
+
+!["Cascade Failure"](images/cascade-failure.png "Cascade Failure")
+
+Load shedding solutions aren't as cut and dry as balancing algorithms because we want the scalpel of the surgeon and not the cleaver of the butcher to allow these scars to heal more beautifully. We can use the same principles though of balancing randomness and algorithms to set up this success. As examples with good principles, @arkwright applied three simultaneous load shedding techniques to solve their issues (on top of a round robin load balancing strategy).
+
+First, they wanted to decrease the load on the server in rendering their React components during high traffic times. Luckily, they were using Redux and had the potential to either return a rendered component to the client or the underlying Redux data. So, when the request queue was above a certain size, responses were returned of the redux data to push rendering to the client and speed up the average response time.
+
+!["Load Shedding Strategy #1"](images/server-v-client-side-render.png "Load Shedding Strategy #1")
+
+Second, they still wanted to keep total queue lengths under a certain size and return a failed response for requests coming in over that limit. (Basically the vanilla load shedding strategy on top of their previous stretching of node capacity).
+
+!["Load Shedding Strategy #2"](images/vanilla.png "Load Shedding Strategy #2")
+
+After all of this they still realized that they had an issue where the incoming requests they wanted to shed had to wait through the whole queue of requests before being shed. (They didn't want to shed the earlier ones because it's better to return a fast failure than a latent failure for clients).
+
+!["Waiting in line"](images/wait-to-render.png "Waiting in line")
+
+Being a JavaScript process, it wasn't possible to start up new threads to make it through to the end of the queue. So they introduced "interleaved shedding" with the Node event loop to balance responding to requests and receiving them. This involved loading requests planned to be render into a seperate collection that would be drawn from to be rendered in between the gaps of receiving and potentially rejecting requests. This allows for fast failure while adding minimal overhead to the successful requests
+
+!["Load Shedding Strategy #3"](images/interleaved.png "Load Shedding Strategy #3")
+
+Eventually they moved to spinning up multiple Node processes on each compute node to make this a more capable/defined process.
+
+!["IO & Workers processes"](images/io.png "IO & Workers processes")
+
+In conclusion, The best practices behind Load Shedding are ambiguous at best, but a little bit of brain power here can go a long way to helping grow a scalable and robust microservice framework.
+
+### Good Resources
+
+- <https://martinfowler.com/bliki/CircuitBreaker.html>
+- <http://arkwright.github.io/event-sourcing.html>
+- <http://arkwright.github.io/scaling-react-server-side-rendering.html>
