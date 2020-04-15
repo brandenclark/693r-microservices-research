@@ -1,5 +1,34 @@
 # Microservices
 
+## Table of Contents
+
+- [Microservices](#microservices)
+  - [Table of Contents](#table-of-contents)
+  - [Microservices as a whole](#microservices-as-a-whole)
+    - [What are they](#what-are-they)
+    - [Making the decision to use them](#making-the-decision-to-use-them)
+    - [Good Resources](#good-resources)
+  - [Containers](#containers)
+    - [Good Resources](#good-resources-1)
+  - [Orchestrators](#orchestrators)
+    - [Terminology](#terminology)
+    - [Good Resources](#good-resources-2)
+  - [API Gateway](#api-gateway)
+    - [Implementing an API Gateway](#implementing-an-api-gateway)
+    - [Good Resources](#good-resources-3)
+  - [Service Discovery and Monitoring](#service-discovery-and-monitoring)
+    - [Process](#process)
+    - [Additional features: Client-side discovery](#additional-features-client-side-discovery)
+    - [Good Resources](#good-resources-4)
+  - [Load Balancing](#load-balancing)
+    - [Algorithms](#algorithms)
+    - [Popular technologies](#popular-technologies)
+    - [Good Resources](#good-resources-5)
+  - [Handling Errors](#handling-errors)
+    - [Circuit Breaking](#circuit-breaking)
+    - [Load Shedding](#load-shedding)
+    - [Good Resources](#good-resources-6)
+
 ## Microservices as a whole
 
 ### What are they
@@ -185,7 +214,7 @@ Taking a look at everything we've talked about already, we have an issue with ne
 
 - <https://www.nginx.com/resources/glossary/load-balancing/>
 
-## Circuit Breaking and Load Shedding
+## Handling Errors
 
 So far we've looked at what happens when everything goes according to plan with microservices. But I've heard enough quotes of Murphy's law to know that's not going to always be the case. We need to have measures to handle when our load is too much for our own or dependent services.
 
@@ -244,5 +273,4 @@ In conclusion, The best practices behind Load Shedding are ambiguous at best, bu
 ### Good Resources
 
 - <https://martinfowler.com/bliki/CircuitBreaker.html>
-- <http://arkwright.github.io/event-sourcing.html>
 - <http://arkwright.github.io/scaling-react-server-side-rendering.html>
